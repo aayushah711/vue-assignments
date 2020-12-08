@@ -1,10 +1,14 @@
 <template>
-  <section>FILTER</section>
+  <section>
+    <coach-filter @change-filter="setFilters"></coach-filter>
+  </section>
   <section>
     <base-card>
       <div class="controls">
         <base-button mode="outline">Refresh</base-button>
-        <base-button link to="/register">Register as Coach</base-button>
+        <base-button v-if="!isCoach" to="/register" link
+          >Register as Coach</base-button
+        >
       </div>
       <ul v-if="hasCoaches">
         <coach-item
@@ -23,22 +27,52 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 import { useStore } from 'vuex';
 import CoachItem from '../../components/coaches/CoachItem.vue';
+import CoachFilter from '../../components/coaches/CoachFilter.vue';
 
 export default {
-  components: { CoachItem },
+  components: { CoachItem, CoachFilter },
   setup() {
     const store = useStore();
-    const filteredCoaches = computed(() => {
-      return store.getters['coaches/coaches'];
+    const activeFilters = reactive({
+      frontend: true,
+      backend: true,
+      career: true
     });
+
+    const setFilters = updatedFilters => {
+      activeFilters.frontend = updatedFilters.frontend;
+      activeFilters.backend = updatedFilters.backend;
+      activeFilters.career = updatedFilters.career;
+    };
+
+    const filteredCoaches = computed(() => {
+      const coaches = store.getters['coaches/coaches'];
+      return coaches.filter(coach => {
+        if (activeFilters.frontend && coach.areas.includes('frontend')) {
+          return true;
+        }
+        if (activeFilters.backend && coach.areas.includes('backend')) {
+          return true;
+        }
+        if (activeFilters.career && coach.areas.includes('career')) {
+          return true;
+        }
+        return false;
+      });
+    });
+
     const hasCoaches = computed(() => {
       return store.getters['coaches/hasCoaches'];
     });
 
-    return { filteredCoaches, hasCoaches };
+    const isCoach = computed(() => {
+      return store.getters['coaches/isCoach'];
+    });
+
+    return { filteredCoaches, hasCoaches, setFilters, isCoach };
   }
 };
 </script>
